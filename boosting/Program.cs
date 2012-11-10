@@ -10,6 +10,8 @@ namespace boosting
     {
         static void Main(string[] args)
         {
+            Console.Write("test");
+            Console.ReadLine();
         }
     }
 }
