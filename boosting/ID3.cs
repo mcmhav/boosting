@@ -11,9 +11,9 @@ namespace boosting
         private static readonly int numOfGroupings = 4;
         private static readonly int minCasesPerRegNode = 55;
         private static readonly double minInfoGain = 0.0;
-        private static readonly bool averageVote = true;
+        private static readonly bool averageVote = false;
         
-        public static Hypotheses generateHypothesis(List<Case> cases, List<double> weights)
+        public static Hypotheses generateHypothesis(List<Case> cases)
         {
             ID3 h = new ID3();
             List<int> remainingAttributeIndexes2 = new List<int>();
@@ -24,7 +24,6 @@ namespace boosting
         }
 
         private Node rootNode;
-        private int numOfClassificationTypes;
 
         public override double classify(List<double> attributes)
         {
@@ -33,7 +32,7 @@ namespace boosting
         
         private Node createNode(List<int> attributeIndexes, List<Case> cases)
         {
-            double entropy = DataStatistics.entropy(cases, numOfClassificationTypes);
+            double entropy = DataStatistics.entropy(cases);
             if (entropy == 0) return new LeafNode(cases[0].classification);
             else if (attributeIndexes.Count == 0 || cases.Count < minCasesPerRegNode)
             {

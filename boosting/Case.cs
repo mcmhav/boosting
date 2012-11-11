@@ -10,6 +10,7 @@ namespace boosting
     {
         public List<double> attributes { get; private set; }
         public double classification { get; private set; }
+        public double weight = 1;
 
         public Case(List<double> attributes, double classification = -9999)
         {

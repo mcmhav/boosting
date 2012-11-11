@@ -8,33 +8,38 @@ namespace boosting
 {
     class ADABoost
     {
-        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, List<double>, Hypotheses> L, int M)
+        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, Hypotheses> L, int M)
         {
             int N = examples.Count;
             List<Hypotheses> h = new List<Hypotheses>();
-            List<double> weights = new List<double>();
-            List<double> w = new List<double>();
+            List<double> z = new List<double>();
+            double weightTotal = 0;
+
             for (int i = 0; i < N; i++)
 			{
-			    w.Add((double)1/N);
+			    examples[i].weight = ((double)1/N);
 			}
-            List<double> z = new List<double>();
             for (int m = 0; m < M; m++)
             {
-                h.Add(L(examples, w));
+                h.Add(L(examples));
                 double error = 0;
                 for (int j = 0; j < N; j++)
-                    if (h[m].classify(examples[j].attributes) != examples[j].classification) error += w[j];
+                    if (h[m].classify(examples[j].attributes) != examples[j].classification)
+                        error += examples[j].weight;
 
                 for (int j = 0; j < N; j++)
-                    if (h[m].classify(examples[j].attributes) == examples[j].classification) w[j] *= error / (1 - error);
+                    if (h[m].classify(examples[j].attributes) == examples[j].classification)
+                        examples[j].weight *= error / (1 - error);
 
-                double wTotal = w.Sum();
-                for (int j = 0; j < N; j++) w[m] /= wTotal;
+                double wTotal = examples.Sum(c => c.weight);
+                for (int j = 0; j < N; j++) examples[j].weight /= wTotal;
                 
-
-                h[m].setWeight(Math.Log(error / (1- error)));
+                h[m].weight = Math.Log(error / (1- error));
+                weightTotal += h[m].weight;
             }
+
+            for (int m = 0; m < M; m++)
+                h[m].weight /= weightTotal;
 
             return h;
         }
@@ -44,10 +49,9 @@ namespace boosting
             double tse = 0;
             foreach (Case c in testSet)
             {
+                Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
                 tse += Math.Pow((classify(hypotheses, c.attributes) - c.classification), 2);
             }
-            Console.WriteLine(testSet.Count);
-            Console.WriteLine(tse);
             return tse / testSet.Count;
         }
 
@@ -57,8 +61,6 @@ namespace boosting
             foreach (Hypotheses h in hypotheses)
             {
                 classification += h.classify(attributes) * h.weight;
-                Console.WriteLine(h.weight);
-                Console.WriteLine(h.classify(attributes));
             }
             return classification;
         }
