@@ -15,9 +15,7 @@ namespace boosting
 
         public static Hypotheses generateHypothesis(List<Case> cases)
         {
-            NaiveBayes h = new NaiveBayes(cases);
-
-            return h;
+            return new NaiveBayes(cases);
         }
 
         public NaiveBayes(List<Case> cases)
@@ -28,11 +26,14 @@ namespace boosting
             for (int i = 0; i < cases.First().attributes.Count; i++)
                 attrProbabilities[i] = new AttrGroupings(cases, i);
 
-            var originalGroupings = cases.GroupBy(c => c.classification);
-
+            var originalGroupings = cases.GroupBy(c => c.classification).ToList();
             if (originalGroupings.Count() <= numOfGroupings)
             {
-                //this.classProbabilities = originalGroupings.Select(g => new ClassGrouping(g.All(), this.attrProbabilities));
+                for (int i = 0; i < originalGroupings.Count; i++)
+                {
+                    double probability = originalGroupings[i].Count() / cases.Count;
+                    this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
+                }
             }
             else
             {
@@ -44,7 +45,7 @@ namespace boosting
                     List<Case> temp2;
                     if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
                     else temp2 = temp.Skip(takeCount * i).ToList();
-                    this.classProbabilities.Add(new ClassGrouping(temp2, attrProbabilities));
+                    this.classProbabilities.Add(new ClassGrouping(temp2, attrProbabilities, temp2.Count / cases.Count));
                 }
             }
         }
@@ -66,17 +67,12 @@ namespace boosting
             public double probability { get; private set; }
             public List<AttrGroupings> attrProbabilities { get; private set; }
 
-            public ClassGrouping(List<Case> cases, List<AttrGroupings> attrGroupings)
+            public ClassGrouping(List<Case> cases, List<AttrGroupings> attrGroupings, double probability)
             {
                 this.min = cases.First().classification;
                 this.max = cases.Last().classification;
-
-                this.attrProbabilities = attrGroupings.Select(g => new AttrGroupings(g)).ToList();
-            }
-
-            public void setProbability(double probability)
-            {
                 this.probability = probability;
+                this.attrProbabilities = attrGroupings.Select(g => new AttrGroupings(cases, g)).ToList();
             }
         }
 
@@ -90,23 +86,45 @@ namespace boosting
                 this.attributeIndex = attributeIndex;
                 this.groupings = new List<AttrGrouping>();
 
-                List<Case> temp = cases.OrderBy(c => c.attributes[attributeIndex]).ToList();
-                int takeCount = temp.Count / numOfGroupings;
-
-                for (int i = 0; i < numOfGroupings; i++)
+                var originalGroupings = cases.GroupBy(c => c.attributes[attributeIndex]).ToList();
+                if (originalGroupings.Count() <= numOfGroupings)
                 {
-                    List<Case> temp2;
-                    if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
-                    else temp2 = temp.Skip(takeCount * i).ToList();
-                    this.groupings.Add(new AttrGrouping(temp2, attributeIndex));
+                    for(int i = 0; i < originalGroupings.Count; i++)
+                    {
+                        double probability = originalGroupings[i].Count() / cases.Count;
+                        this.groupings.Add(new AttrGrouping(originalGroupings[i].ToList(), i, probability));
+                    }
+                }
+                else
+                {
+                    List<Case> temp = cases.OrderBy(c => c.attributes[attributeIndex]).ToList();
+                    int takeCount = temp.Count / numOfGroupings;
+
+                    for (int i = 0; i < numOfGroupings; i++)
+                    {
+                        List<Case> temp2;
+                        if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
+                        else temp2 = temp.Skip(takeCount * i).ToList();
+                        double probability = temp2.Count / cases.Count;
+                        this.groupings.Add(new AttrGrouping(temp2, attributeIndex, probability));
+                    }
                 }
             }
 
-            public AttrGroupings(AttrGroupings original)
+            public AttrGroupings(List<Case> cases, AttrGroupings original)
             {
                 this.attributeIndex = original.attributeIndex;
                 this.groupings = new List<AttrGrouping>();
-                this.groupings = original.groupings.Select(g => new AttrGrouping(g)).ToList();
+
+                foreach(AttrGrouping g in original.groupings)
+                {
+                    double probability = cases.Where(c => 
+                        c.attributes[original.attributeIndex] >= original.groupings[attributeIndex].min
+                        && c.attributes[original.attributeIndex] <= original.groupings[attributeIndex].max)
+                        .Count() / cases.Count;
+
+                    this.groupings.Add(new AttrGrouping(g, probability));
+                }
             }
         }
 
@@ -116,20 +134,17 @@ namespace boosting
             public double max { get; private set; }
             public double probability { get; private set; }
 
-            public AttrGrouping(List<Case> cases, int attributeIndex)
+            public AttrGrouping(List<Case> cases, int attributeIndex, double probability)
             {
                 this.min = cases.First().attributes[attributeIndex];
                 this.max = cases.Last().attributes[attributeIndex];
+                this.probability = probability;
             }
 
-            public AttrGrouping(AttrGrouping original)
+            public AttrGrouping(AttrGrouping original, double probability)
             {
                 this.min = original.min;
                 this.max = original.max;
-            }
-
-            public void setProbability(double probability)
-            {
                 this.probability = probability;
             }
         }
