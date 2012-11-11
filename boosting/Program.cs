@@ -48,7 +48,10 @@ namespace boosting
             Console.WriteLine(fileName);
             Tuple<List<Case>, List<Case>> caseSets = getCaseSetsFromFile(fileName);
             
-            List<Hypotheses> id3 = ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, 10);
+            List<Hypotheses> id3 = ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, 1);
+
+            foreach (Hypotheses h in id3) Console.WriteLine(h.ToString());
+
             Console.WriteLine("ID3: " + ADABoost.test(id3, caseSets.Item2));
             
             //List<Hypotheses> naiveBayes = ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, 10);

@@ -11,10 +11,7 @@ namespace boosting
         public double weight;
         
         public abstract double classify(List<double> attributes);
-        
-        public void setWeight(double weight)
-        {
-            this.weight = weight;
-        }
+        public abstract string ToString();
+
     }
 }

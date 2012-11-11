@@ -22,13 +22,14 @@ namespace boosting
         {
             int numOfclassificationValues = cases.GroupBy(c => c.classification).Count();
             double entropy = 0;
-            int totalWeight = (int) cases.Sum(c => c.weight);
+            double totalWeight = cases.Sum(c => c.weight);
             var groupings = cases.GroupBy(c => c.classification).ToList();
             foreach (var g in groupings)
             {
                 double proportion = (double) g.Sum(c => c.weight) / totalWeight;
                 entropy -= proportion * Math.Log(proportion, numOfclassificationValues);
             }
+            //Console.WriteLine("Entropy: " + entropy);
             return entropy;
         }
     }

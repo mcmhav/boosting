@@ -9,7 +9,7 @@ namespace boosting
     class ID3 : Hypotheses
     {
         private static readonly int numOfGroupings = 4;
-        private static readonly int minCasesPerRegNode = 55;
+        private static readonly int minCasesPerRegNode = 10;
         private static readonly double minInfoGain = 0.0;
         private static readonly bool averageVote = false;
         
@@ -33,7 +33,8 @@ namespace boosting
         private Node createNode(List<int> attributeIndexes, List<Case> cases)
         {
             double entropy = DataStatistics.entropy(cases);
-            if (entropy == 0) return new LeafNode(cases[0].classification);
+            if (entropy == 0) 
+                return new LeafNode(cases[0].classification);
             else if (attributeIndexes.Count == 0 || cases.Count < minCasesPerRegNode)
             {
                 if (averageVote) return new LeafNode(cases.Average(c => c.classification));
@@ -78,9 +79,15 @@ namespace boosting
             }
         }
 
+        public override string ToString()
+        {
+            return rootNode.ToString();
+        }
+
         internal interface Node
         {
             double classify(List<double> attributes);
+            string ToString();
         }
 
         internal class LeafNode : Node
@@ -100,6 +107,11 @@ namespace boosting
             public double entropy(List<Case> cases)
             {
                 return 0;
+            }
+
+            public override string ToString()
+            {
+                return classification.ToString();
             }
         }
 
@@ -143,6 +155,16 @@ namespace boosting
             {
                 branches.First().setMinValue(Math.Min(branches.First().min, -100000));
                 branches.Last().setMaxValue(Math.Max(branches.Last().max, +100000));
+            }
+
+            public override string ToString()
+            {
+                string s = attributeName + "(";
+                foreach (Branch b in branches)
+                {
+                    s += "<" + b.max + "(" + b.child.ToString() + ")";
+                }
+                return s;
             }
         }
 

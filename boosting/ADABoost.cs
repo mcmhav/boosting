@@ -33,7 +33,8 @@ namespace boosting
 
                 double wTotal = examples.Sum(c => c.weight);
                 for (int j = 0; j < N; j++) examples[j].weight /= wTotal;
-                
+
+                Console.WriteLine("Error: " + error);
                 h[m].weight = Math.Log(error / (1- error));
                 weightTotal += h[m].weight;
             }
@@ -60,6 +61,7 @@ namespace boosting
             double classification = 0;
             foreach (Hypotheses h in hypotheses)
             {
+                //Console.WriteLine("classification: " + h.classify(attributes));
                 classification += h.classify(attributes) * h.weight;
             }
             return classification;
