@@ -28,15 +28,24 @@ namespace boosting
             for (int i = 0; i < cases.First().attributes.Count; i++)
                 attrProbabilities[i] = new AttrGroupings(cases, i);
 
-            List<Case> temp = cases.OrderBy(c => c.classification).ToList();
-            int takeCount = temp.Count / numOfGroupings;
+            var originalGroupings = cases.GroupBy(c => c.classification);
 
-            for (int i = 0; i < numOfGroupings; i++)
+            if (originalGroupings.Count() <= numOfGroupings)
             {
-                List<Case> temp2;
-                if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
-                else temp2 = temp.Skip(takeCount * i).ToList();
-                this.classProbabilities.Add(new ClassGrouping(temp2, attrProbabilities));
+                //this.classProbabilities = originalGroupings.Select(g => new ClassGrouping(g.All(), this.attrProbabilities));
+            }
+            else
+            {
+                List<Case> temp = cases.OrderBy(c => c.classification).ToList();
+                int takeCount = temp.Count / numOfGroupings;
+
+                for (int i = 0; i < numOfGroupings; i++)
+                {
+                    List<Case> temp2;
+                    if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
+                    else temp2 = temp.Skip(takeCount * i).ToList();
+                    this.classProbabilities.Add(new ClassGrouping(temp2, attrProbabilities));
+                }
             }
         }
 
@@ -52,10 +61,10 @@ namespace boosting
 
         internal class ClassGrouping
         {
-            public double min { public get; private set; }
-            public double max { public get; private set; }
-            public double probability { public get; private set; }
-            public List<AttrGroupings> attrProbabilities { public get; private set; }
+            public double min { get; private set; }
+            public double max { get; private set; }
+            public double probability { get; private set; }
+            public List<AttrGroupings> attrProbabilities { get; private set; }
 
             public ClassGrouping(List<Case> cases, List<AttrGroupings> attrGroupings)
             {
@@ -73,8 +82,8 @@ namespace boosting
 
         internal class AttrGroupings
         {
-            public int attributeIndex { public get; private set; }
-            public List<AttrGrouping> groupings { public get; private set; }
+            public int attributeIndex { get; private set; }
+            public List<AttrGrouping> groupings { get; private set; }
 
             public AttrGroupings(List<Case> cases, int attributeIndex)
             {
@@ -103,9 +112,9 @@ namespace boosting
 
         internal class AttrGrouping
         {
-            public double min { public get; private set; }
-            public double max { public get; private set; }
-            public double probability { private set; }
+            public double min { get; private set; }
+            public double max { get; private set; }
+            public double probability { get; private set; }
 
             public AttrGrouping(List<Case> cases, int attributeIndex)
             {

@@ -49,6 +49,7 @@
     <Compile Include="DataStatistics.cs" />
     <Compile Include="Hypothesis.cs" />
     <Compile Include="ID3.cs" />
+    <Compile Include="NaiveBayes.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
