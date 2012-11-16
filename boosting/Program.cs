@@ -47,12 +47,32 @@ namespace boosting
         {
             Console.WriteLine(fileName);
             Tuple<List<Case>, List<Case>> caseSets = getCaseSetsFromFile(fileName);
-            
-            List<Hypotheses> id3 = ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, 1);
 
-            foreach (Hypotheses h in id3) Console.WriteLine(h.ToString());
+            List<Hypotheses> H = new List<Hypotheses>();
+            H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, 10));
+            H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, 10));
 
-            Console.WriteLine("ID3: " + ADABoost.test(id3, caseSets.Item2));
+            List<Hypotheses> id3 = ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, 10);
+            List<Hypotheses> nb = ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, 1);
+
+            double totalWeight = H.Sum(h => h.weight);
+            foreach (Hypotheses h in H) h.weight /= totalWeight;
+
+            double totalWeightID3 = id3.Sum(h => h.weight);
+            foreach (Hypotheses h in id3)
+            {
+                h.weight /= totalWeightID3;
+                Console.WriteLine(h.weight);
+            }
+
+            double totalWeightNB = nb.Sum(h => h.weight);
+            foreach (Hypotheses h in nb) h.weight /= totalWeightNB;
+
+            //foreach (Hypotheses h in id3) Console.WriteLine(h.ToString());
+
+            //Console.WriteLine("ID3: " + ADABoost.test(id3, caseSets.Item2));
+            Console.WriteLine("Naive Bayes: " + ADABoost.test(nb, caseSets.Item2));
+            //Console.WriteLine("Combined: " + ADABoost.test(H, caseSets.Item2));
             
             //List<Hypotheses> naiveBayes = ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, 10);
 

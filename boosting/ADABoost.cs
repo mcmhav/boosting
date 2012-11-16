@@ -39,8 +39,8 @@ namespace boosting
                 weightTotal += h[m].weight;
             }
 
-            for (int m = 0; m < M; m++)
-                h[m].weight /= weightTotal;
+            //for (int m = 0; m < M; m++)
+            //    h[m].weight /= weightTotal;
 
             return h;
         }
@@ -56,14 +56,9 @@ namespace boosting
             return tse / testSet.Count;
         }
 
-        private static double classify(List<Hypotheses> hypotheses, List<double> attributes)
+        private static double classify(List<Hypotheses> H, List<double> attributes)
         {
-            double classification = 0;
-            foreach (Hypotheses h in hypotheses)
-            {
-                //Console.WriteLine("classification: " + h.classify(attributes));
-                classification += h.classify(attributes) * h.weight;
-            }
+            double classification = H.GroupBy(h => h.classify(attributes)).OrderBy(g => g.Sum(h => h.weight)).First().Key;
             return classification;
         }
     }

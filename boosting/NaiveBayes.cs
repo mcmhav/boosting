@@ -24,67 +24,36 @@ namespace boosting
             this.attrProbabilities = new List<AttrGroupings>();
 
             for (int i = 0; i < cases.First().attributes.Count; i++)
-                attrProbabilities[i] = new AttrGroupings(cases, i);
+                attrProbabilities.Add(new AttrGroupings(cases, i));
 
             var originalGroupings = cases.GroupBy(c => c.classification).ToList();
-            if (originalGroupings.Count() <= numOfGroupings)
+            for (int i = 0; i < originalGroupings.Count; i++)
             {
-                for (int i = 0; i < originalGroupings.Count; i++)
-                {
-                    double probability = originalGroupings[i].Count() / cases.Count;
-                    this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
-                }
-            }
-            else
-            {
-                List<Case> temp = cases.OrderBy(c => c.classification).ToList();
-                int takeCount = temp.Count / numOfGroupings;
-
-                for (int i = 0; i < numOfGroupings; i++)
-                {
-                    List<Case> temp2;
-                    if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
-                    else temp2 = temp.Skip(takeCount * i).ToList();
-                    this.classProbabilities.Add(new ClassGrouping(temp2, attrProbabilities, temp2.Count / cases.Count));
-                }
+                double probability = ((double) originalGroupings[i].Count() / cases.Count);
+                this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
             }
         }
 
         public override double classify(List<double> attributes)
         {
-            // public Dictionary<string, double> Classify(System.IO.StreamReader tr)
-            //Dictionary<string, double> score = new Dictionary<string, double>();
             double score = 0;
+            double classification = 0;
 
+            foreach (ClassGrouping c in classProbabilities)
+	        {
+                double tempScore = 1;
+                for (int i = 0; i < attributes.Count; i++)
+                {
+                    tempScore *= c.probability * c.attrProbabilities[i].groupings.Where(g => g.min < attributes[i] && g.max >= attributes[i]).First().probability;
+                }
+                if (tempScore > score)
+                {
+                    score = tempScore;
+                    classification = c.classification;
+                }
+	        }
 
-  //           max_prob = 0.0
-  //best = nil
-  
-  //scores = cat_scores(text)
-  //scores.each do |score|
-  //  cat, prob = score
-  //  if prob > max_prob
-  //    max_prob = prob
-  //    best = cat
-  //  end
-  //end
-
-  //# Return the default category in case the threshold condition was
-  //# not met. For example, if the threshold for :spam is 1.2
-  //#
-  //#    :spam => 0.73, :ham => 0.40  (OK)
-  //#    :spam => 0.80, :ham => 0.70  (Fail, :ham is too close)
-
-  //return default unless best
-  //threshold = @thresholds[best] || 1.0
-
-  //scores.each do |score|
-  //  cat, prob = score
-  //  next if cat == best
-  //  return default if prob * threshold > max_prob
-  //end
-
-            return score;
+            return classification;
         }
 
         public override string ToString()
@@ -94,15 +63,13 @@ namespace boosting
 
         internal class ClassGrouping
         {
-            public double min { get; private set; }
-            public double max { get; private set; }
+            public double classification { get; private set; }
             public double probability { get; private set; }
             public List<AttrGroupings> attrProbabilities { get; private set; }
 
             public ClassGrouping(List<Case> cases, List<AttrGroupings> attrGroupings, double probability)
             {
-                this.min = cases.First().classification;
-                this.max = cases.Last().classification;
+                this.classification = cases.First().classification;
                 this.probability = probability;
                 this.attrProbabilities = attrGroupings.Select(g => new AttrGroupings(cases, g)).ToList();
             }
@@ -111,20 +78,20 @@ namespace boosting
         internal class AttrGroupings
         {
             public int attributeIndex { get; private set; }
-            public List<AttrGrouping> groupings { get; private set; }
+            public List<ValueGrouping> groupings { get; private set; }
 
             public AttrGroupings(List<Case> cases, int attributeIndex)
             {
                 this.attributeIndex = attributeIndex;
-                this.groupings = new List<AttrGrouping>();
+                this.groupings = new List<ValueGrouping>();
 
                 var originalGroupings = cases.GroupBy(c => c.attributes[attributeIndex]).ToList();
                 if (originalGroupings.Count() <= numOfGroupings)
                 {
                     for(int i = 0; i < originalGroupings.Count; i++)
                     {
-                        double probability = originalGroupings[i].Count() / cases.Count;
-                        this.groupings.Add(new AttrGrouping(originalGroupings[i].ToList(), i, probability));
+                        double probability = ((double) originalGroupings[i].Count() / cases.Count);
+                        this.groupings.Add(new ValueGrouping(originalGroupings[i].ToList(), i, probability));
                     }
                 }
                 else
@@ -137,43 +104,61 @@ namespace boosting
                         List<Case> temp2;
                         if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
                         else temp2 = temp.Skip(takeCount * i).ToList();
-                        double probability = temp2.Count / cases.Count;
-                        this.groupings.Add(new AttrGrouping(temp2, attributeIndex, probability));
+                        double probability = ((double) temp2.Count / cases.Count);
+                        this.groupings.Add(new ValueGrouping(temp2, attributeIndex, probability));
                     }
                 }
+
+                fillCracks();
             }
 
             public AttrGroupings(List<Case> cases, AttrGroupings original)
             {
                 this.attributeIndex = original.attributeIndex;
-                this.groupings = new List<AttrGrouping>();
+                this.groupings = new List<ValueGrouping>();
 
-                foreach(AttrGrouping g in original.groupings)
+                foreach(ValueGrouping g in original.groupings)
                 {
-                    double probability = cases.Where(c => 
-                        c.attributes[original.attributeIndex] >= original.groupings[attributeIndex].min
-                        && c.attributes[original.attributeIndex] <= original.groupings[attributeIndex].max)
-                        .Count() / cases.Count;
+                    double probability = ((double) 
+                        cases.Where(c => 
+                        c.attributes[attributeIndex] >= g.min
+                        && c.attributes[attributeIndex] <= g.max)
+                        .Count() / cases.Count);
 
-                    this.groupings.Add(new AttrGrouping(g, probability));
+                    this.groupings.Add(new ValueGrouping(g, probability));
+                }
+
+                fillCracks();
+            }
+
+            private void fillCracks()
+            {
+                groupings.First().min = -999999;
+                groupings.Last().max = 999999;
+
+                for (int i = 1; i < groupings.Count; i++)
+                {
+                    double crackSize = groupings[i].min - groupings[i - 1].max;
+                    groupings[i - 1].max += crackSize;
+                    groupings[i].min = groupings[i - 1].max;
                 }
             }
         }
 
-        internal class AttrGrouping
+        internal class ValueGrouping
         {
-            public double min { get; private set; }
-            public double max { get; private set; }
+            public double min;
+            public double max;
             public double probability { get; private set; }
 
-            public AttrGrouping(List<Case> cases, int attributeIndex, double probability)
+            public ValueGrouping(List<Case> cases, int attributeIndex, double probability)
             {
                 this.min = cases.First().attributes[attributeIndex];
                 this.max = cases.Last().attributes[attributeIndex];
                 this.probability = probability;
             }
 
-            public AttrGrouping(AttrGrouping original, double probability)
+            public ValueGrouping(ValueGrouping original, double probability)
             {
                 this.min = original.min;
                 this.max = original.max;
