@@ -52,7 +52,94 @@ namespace boosting
 
         public override double classify(List<double> attributes)
         {
-            return 0;
+            // public Dictionary<string, double> Classify(System.IO.StreamReader tr)
+            //Dictionary<string, double> score = new Dictionary<string, double>();
+            double score = 0;
+
+            foreach (KeyValuePair<string, ICategory> cat in m_Categories)
+            {
+                score.Add(cat.Value.Name, 0.0);
+            }
+
+            foreach (KeyValuePair<string, PhraseCount> kvp1 in words_in_file)
+            {
+                PhraseCount pc_in_file = kvp1.Value;
+                foreach (KeyValuePair<string, ICategory> kvp in m_Categories)
+                {
+                    ICategory cat = kvp.Value;
+                    int count = cat.GetPhraseCount(pc_in_file.RawPhrase);
+                    if (0 < count)
+                    {
+                        score[cat.Name] += System.Math.Log((double)count / (double)cat.TotalWords);
+                    }
+                    else
+                    {
+                        score[cat.Name] += System.Math.Log(0.01 / (double)cat.TotalWords);
+                    }
+                }
+            }
+  
+            foreach (KeyValuePair<string, ICategory> kvp in m_Categories)
+            {
+                ICategory cat = kvp.Value;
+                score[cat.Name] += System.Math.Log((double)cat.TotalWords / (double)this.CountTotalWordsInCategories());
+            }
+
+            return score;
+        }
+
+        public string Classify(string sample, out double Probability, out List<double> ProbabDistribution)
+        {
+            //Splits sample words
+            string[] words = sample.ToLower().Split(cc, StringSplitOptions.RemoveEmptyEntries);
+            words = GetFeatures(words);
+
+            ProbabDistribution = new List<double>();
+            double totalProbab = 0;
+
+            for (int i = 0; i < AllCategories.Count; i++)
+            {
+                double probab = Math.Log(GetCategoryProbability(i));
+                for (int j = 0; j < words.Length; j++)
+                {
+                    probab += Math.Log(GetWordProbability(words[j], i));
+                }
+                totalProbab += Math.Exp(probab);
+                ProbabDistribution.Add(probab);
+            }
+
+            int indMax = 0;
+            double max = ProbabDistribution[0];
+            if (totalProbab != 0) totalProbab = 1.0 / totalProbab;
+
+            for (int i = 0; i < AllCategories.Count; i++)
+            {
+                if (ProbabDistribution[i] > max)
+                {
+                    max = ProbabDistribution[i];
+                    indMax = i;
+                }
+
+                if (totalProbab != 0) ProbabDistribution[i] = Math.Exp(ProbabDistribution[i]) * totalProbab;
+            }
+
+            Probability = ProbabDistribution[indMax];
+            if (totalProbab == 0)
+            {
+                //1/pb = exp(lnp1)/exp(lnPmax) + exp(lnp2)/exp(lnPmax) +...
+                double pb = 0;
+                for (int i = 0; i < ProbabDistribution.Count; i++)
+                {
+                    if (i != indMax) pb += Math.Exp(ProbabDistribution[i] - ProbabDistribution[indMax]);
+                }
+                pb += 1;
+                pb = 1 / pb;
+                Probability = pb;
+            }
+
+            if (Probability > 1.0) Probability = 1.0;
+
+            return AllCategories[indMax];
         }
 
         public override string ToString()
