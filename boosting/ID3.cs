@@ -9,8 +9,8 @@ namespace boosting
     class ID3 : Hypotheses
     {
         private static readonly int numOfGroupings = 4;
-        private static readonly int minCasesPerRegNode = 10;
-        private static readonly double minInfoGain = 0.0;
+        private static readonly int minCasesPerRegNode = 50;
+        private static readonly double minInfoGain = 0.05;
         private static readonly bool averageVote = false;
         
         public static Hypotheses generateHypothesis(List<Case> cases)
@@ -79,9 +79,9 @@ namespace boosting
             }
         }
 
-        public override string ToString()
+        public override void print()
         {
-            return rootNode.ToString();
+            Console.WriteLine(rootNode.ToString());
         }
 
         internal interface Node

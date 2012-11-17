@@ -8,7 +8,7 @@ namespace boosting
 {
     class NaiveBayes : Hypotheses
     {
-        private static readonly int numOfGroupings = 4;
+        private static readonly int numOfGroupings = 15;
 
         private List<ClassGrouping> classProbabilities;
         private List<AttrGroupings> attrProbabilities;
@@ -27,10 +27,27 @@ namespace boosting
                 attrProbabilities.Add(new AttrGroupings(cases, i));
 
             var originalGroupings = cases.GroupBy(c => c.classification).ToList();
-            for (int i = 0; i < originalGroupings.Count; i++)
+            if (originalGroupings.Count <= 10)
             {
-                double probability = ((double) originalGroupings[i].Count() / cases.Count);
-                this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
+                for (int i = 0; i < originalGroupings.Count; i++)
+                {
+                    double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double)cases.Count;
+                    this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
+                }
+            }
+            else
+            {
+                List<Case> temp = cases.OrderBy(c => c.classification).ToList();
+                int takeCount = temp.Count / numOfGroupings;
+
+                for (int i = 0; i < numOfGroupings; i++)
+                {
+                    List<Case> temp2;
+                    if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
+                    else temp2 = temp.Skip(takeCount * i).ToList();
+                    double probability = (double)temp2.Sum(c => c.weight) / (double)cases.Count;
+                    this.classProbabilities.Add(new ClassGrouping(temp2, this.attrProbabilities, probability));
+                }
             }
         }
 
@@ -56,9 +73,31 @@ namespace boosting
             return classification;
         }
 
-        public override string ToString()
+        public override void print()
         {
-            return "";
+            for (int i = 0; i < attrProbabilities.Count; i++)
+            {
+                Console.WriteLine("attribute" + i);
+                for (int j = 0; j < attrProbabilities[i].groupings.Count; j++)
+                {
+                    Console.WriteLine("\t min: " + attrProbabilities[i].groupings[j].min + " - max: " + attrProbabilities[i].groupings[j].max +
+                        " - prob: " + attrProbabilities[i].groupings[j].probability);
+                }
+            }
+
+            foreach (ClassGrouping cg in classProbabilities)
+            {
+                Console.WriteLine("Classification: " + cg.classification + " - probability: " + cg.probability);
+                for (int i = 0; i < cg.attrProbabilities.Count; i++)
+                {
+                    Console.WriteLine("\t attribute" + i);
+                    for (int j = 0; j < cg.attrProbabilities[i].groupings.Count; j++)
+                    {
+                        Console.WriteLine("\t\t min: " + cg.attrProbabilities[i].groupings[j].min + " - max: " + cg.attrProbabilities[i].groupings[j].max + 
+                            " - prob: " + cg.attrProbabilities[i].groupings[j].probability);
+                    }
+                }
+            }
         }
 
         internal class ClassGrouping
@@ -90,8 +129,8 @@ namespace boosting
                 {
                     for(int i = 0; i < originalGroupings.Count; i++)
                     {
-                        double probability = ((double) originalGroupings[i].Count() / cases.Count);
-                        this.groupings.Add(new ValueGrouping(originalGroupings[i].ToList(), i, probability));
+                        double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double) cases.Count;
+                        this.groupings.Add(new ValueGrouping(originalGroupings[i].ToList(), attributeIndex, probability));
                     }
                 }
                 else
@@ -104,7 +143,7 @@ namespace boosting
                         List<Case> temp2;
                         if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
                         else temp2 = temp.Skip(takeCount * i).ToList();
-                        double probability = ((double) temp2.Count / cases.Count);
+                        double probability = (double)temp2.Sum(c => c.weight) / (double) cases.Count;
                         this.groupings.Add(new ValueGrouping(temp2, attributeIndex, probability));
                     }
                 }
@@ -119,11 +158,12 @@ namespace boosting
 
                 foreach(ValueGrouping g in original.groupings)
                 {
-                    double probability = ((double) 
-                        cases.Where(c => 
-                        c.attributes[attributeIndex] >= g.min
-                        && c.attributes[attributeIndex] <= g.max)
-                        .Count() / cases.Count);
+                    double probability = (double) cases
+                        .Where(c => 
+                            c.attributes[attributeIndex] >= g.min
+                            && c.attributes[attributeIndex] <= g.max)
+                        .Sum(c => c.weight) 
+                        / (double)cases.Count;
 
                     this.groupings.Add(new ValueGrouping(g, probability));
                 }

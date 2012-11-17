@@ -8,7 +8,7 @@ namespace boosting
 {
     class ADABoost
     {
-        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, Hypotheses> L, int M)
+        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, Hypotheses> L, int M, bool log)
         {
             int N = examples.Count;
             List<Hypotheses> h = new List<Hypotheses>();
@@ -34,8 +34,8 @@ namespace boosting
                 double wTotal = examples.Sum(c => c.weight);
                 for (int j = 0; j < N; j++) examples[j].weight /= wTotal;
 
-                Console.WriteLine("Error: " + error);
-                h[m].weight = Math.Log(error / (1- error));
+                if(log) Console.WriteLine("Error: " + error);
+                h[m].weight = Math.Log((1 - error) / error);
                 weightTotal += h[m].weight;
             }
 
@@ -45,12 +45,12 @@ namespace boosting
             return h;
         }
 
-        public static double test(List<Hypotheses> hypotheses, List<Case> testSet)
+        public static double test(List<Hypotheses> hypotheses, List<Case> testSet, bool log)
         {
             double tse = 0;
             foreach (Case c in testSet)
             {
-                Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
+                if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
                 tse += Math.Pow((classify(hypotheses, c.attributes) - c.classification), 2);
             }
             return tse / testSet.Count;

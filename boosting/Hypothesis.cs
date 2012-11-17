@@ -11,7 +11,7 @@ namespace boosting
         public double weight;
         
         public abstract double classify(List<double> attributes);
-        public abstract string ToString();
+        public abstract void print();
 
     }
 }
