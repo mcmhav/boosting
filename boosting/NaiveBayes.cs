@@ -31,7 +31,7 @@ namespace boosting
             {
                 for (int i = 0; i < originalGroupings.Count; i++)
                 {
-                    double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double)cases.Count;
+                    double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double)cases.Sum(c => c.weight); // trenger egentlig ikke dele her, da sum av vekter er 1.
                     this.classProbabilities.Add(new ClassGrouping(originalGroupings[i].ToList(), this.attrProbabilities, probability));
                 }
             }
@@ -45,7 +45,7 @@ namespace boosting
                     List<Case> temp2;
                     if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
                     else temp2 = temp.Skip(takeCount * i).ToList();
-                    double probability = (double)temp2.Sum(c => c.weight) / (double)cases.Count;
+                    double probability = (double)temp2.Sum(c => c.weight) / (double)cases.Sum(c => c.weight); // trenger egentlig ikke dele her, da sum av vekter er 1.
                     this.classProbabilities.Add(new ClassGrouping(temp2, this.attrProbabilities, probability));
                 }
             }
@@ -124,12 +124,12 @@ namespace boosting
                 this.attributeIndex = attributeIndex;
                 this.groupings = new List<ValueGrouping>();
 
-                var originalGroupings = cases.GroupBy(c => c.attributes[attributeIndex]).ToList();
+                var originalGroupings = cases.GroupBy(c => c.attributes[attributeIndex]).OrderBy(g => g.Key).ToList();
                 if (originalGroupings.Count() <= numOfGroupings)
                 {
                     for(int i = 0; i < originalGroupings.Count; i++)
                     {
-                        double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double) cases.Count;
+                        double probability = (double)originalGroupings[i].Sum(c => c.weight) / (double)cases.Sum(c => c.weight);
                         this.groupings.Add(new ValueGrouping(originalGroupings[i].ToList(), attributeIndex, probability));
                     }
                 }
@@ -143,7 +143,7 @@ namespace boosting
                         List<Case> temp2;
                         if (i != numOfGroupings - 1) temp2 = temp.Skip(takeCount * i).Take(takeCount).ToList();
                         else temp2 = temp.Skip(takeCount * i).ToList();
-                        double probability = (double)temp2.Sum(c => c.weight) / (double) cases.Count;
+                        double probability = (double)temp2.Sum(c => c.weight) / (double)cases.Sum(c => c.weight);
                         this.groupings.Add(new ValueGrouping(temp2, attributeIndex, probability));
                     }
                 }
@@ -162,8 +162,8 @@ namespace boosting
                         .Where(c => 
                             c.attributes[attributeIndex] >= g.min
                             && c.attributes[attributeIndex] <= g.max)
-                        .Sum(c => c.weight) 
-                        / (double)cases.Count;
+                        .Sum(c => c.weight)
+                        / (double)cases.Sum(c => c.weight);
 
                     this.groupings.Add(new ValueGrouping(g, probability));
                 }
@@ -179,7 +179,7 @@ namespace boosting
                 for (int i = 1; i < groupings.Count; i++)
                 {
                     double crackSize = groupings[i].min - groupings[i - 1].max;
-                    groupings[i - 1].max += crackSize;
+                    groupings[i - 1].max += crackSize/2;
                     groupings[i].min = groupings[i - 1].max;
                 }
             }

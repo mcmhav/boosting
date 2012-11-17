@@ -13,8 +13,8 @@ namespace boosting
     class Program
     {
         private static string fileName = "nursery.txt";
-        private static bool testID3 = false;
-        private static bool testNB = true;
+        private static bool testID3 = true;
+        private static bool testNB = false;
         private static bool testBoth = false;
 
         private static int M = 10;
@@ -22,7 +22,12 @@ namespace boosting
 
         static void Main(string[] args)
         {
-            trainAndTest();
+            for (int i = 0; i < 10; i++)
+            {
+                trainAndTest();
+                Console.WriteLine();
+                Console.WriteLine();
+            }
             
             Console.ReadLine();
         }
@@ -71,10 +76,10 @@ namespace boosting
             {
                 List<Hypotheses> H = new List<Hypotheses>();
                 H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, M/2, log));
-                foreach (Case c in caseSets.Item1) c.weight = 1;
                 H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M/2, log));
                 double totalWeight = H.Sum(h => h.weight);
                 foreach (Hypotheses h in H) h.weight /= totalWeight;
+                Console.WriteLine(totalWeight);
                 Console.WriteLine("Combined: " + ADABoost.test(H, caseSets.Item2, log));
             }
         }
@@ -87,11 +92,14 @@ namespace boosting
                 };
             Console.WriteLine(name + ": " + ADABoost.test(lonleyL, caseSets.Item2, log));
 
-            foreach (Case c in caseSets.Item1) c.weight = 1;
-            List<Hypotheses> nb = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, log);
-            double totalWeightNB = nb.Sum(h => h.weight);
-            foreach (Hypotheses h in nb) h.weight /= totalWeightNB;
-            Console.WriteLine("M " + name + "': " + ADABoost.test(nb, caseSets.Item2, log)); 
+            List<Hypotheses> H = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, log);
+            double totalWeightNB = H.Sum(h => h.weight);
+            foreach (Hypotheses h in H)
+            {
+                h.weight /= totalWeightNB;
+                if (log) Console.WriteLine("weight: " + h.weight);
+            }
+            Console.WriteLine("M " + name + "': " + ADABoost.test(H, caseSets.Item2, log));
         }
     }
 

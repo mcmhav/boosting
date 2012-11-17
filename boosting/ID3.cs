@@ -8,7 +8,7 @@ namespace boosting
 {
     class ID3 : Hypotheses
     {
-        private static readonly int numOfGroupings = 4;
+        private static readonly int numOfGroupings = 10;
         private static readonly int minCasesPerRegNode = 50;
         private static readonly double minInfoGain = 0.05;
         private static readonly bool averageVote = false;
@@ -190,9 +190,9 @@ namespace boosting
                 max = maxValue;
             }
 
-            public void setChildNode(Node childDode)
+            public void setChildNode(Node childNode)
             {
-                child = childDode;
+                child = childNode;
             }
         }
 
