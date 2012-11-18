@@ -13,12 +13,12 @@ namespace boosting
     {
         //private static string fileName = "nursery.txt";     // 0 - 4
         private static string fileName = "pen-digits.txt";  // 0 - 9
-        private static bool testID3 = true;
+        private static bool testID3 = false;
         private static bool testNB = false;
         private static bool testBoth = false;
         private static int M = 5;
         private static bool log = false;
-        private static readonly int testCount = 10;
+        private static readonly int testCount = 1;
 
         private static Tuple<double, double> id3 = new Tuple<double,double>(0,0);
         private static Tuple<double, double> naive = new Tuple<double, double>(0, 0);
@@ -90,6 +90,13 @@ namespace boosting
         {
             Console.WriteLine(fileName);
             Tuple<List<Case>, List<Case>, double> caseSets = getCaseSetsFromFile();
+
+            List<Hypotheses> lonleyL = new List<Hypotheses>()
+                {
+                    KNearest.generateHypothesis(caseSets.Item1)
+                };
+            Tuple<double, double> resh = ADABoost.test(lonleyL, caseSets.Item2, log);
+            Console.WriteLine("KNearest: " + resh);
 
             if (testID3)
             {
