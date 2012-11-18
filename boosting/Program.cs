@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Algorithms;
 using System.IO;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -12,7 +11,8 @@ namespace boosting
 {
     class Program
     {
-        private static string fileName = "pen-digits.txt";
+        //private static string fileName = "nursery.txt";     // 0 - 4
+        private static string fileName = "pen-digits.txt";  // 0 - 9
         private static bool testID3 = true;
         private static bool testNB = false;
         private static bool testBoth = false;
@@ -28,7 +28,8 @@ namespace boosting
                 Console.WriteLine();
                 Console.WriteLine();
             }
-            
+
+            Console.WriteLine("DONE");
             Console.ReadLine();
         }
 
