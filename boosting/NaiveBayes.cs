@@ -173,8 +173,8 @@ namespace boosting
 
             private void coverDomain()
             {
-                groupings.First().min = -999999;
-                groupings.Last().max = 999999;
+                groupings.First().min = double.MinValue;
+                groupings.Last().max = double.MaxValue;
 
                 for (int i = 1; i < groupings.Count; i++)
                 {

@@ -11,14 +11,20 @@ namespace boosting
 {
     class Program
     {
-        //private static string fileName = "nursery.txt";     // 0 - 4
+        //private static string fileName = ;     // 0 - 4
         private static string fileName = "pen-digits.txt";  // 0 - 9
+        private static List<string> filenames = new List<string>(){"Yeast.txt",
+                                                                    "page-blocks.txt",
+                                                                    "glass.txt",
+                                                                    "nursery.txt",
+                                                                    "pen-digits.txt"};
         private static bool testID3 = false;
         private static bool testNB = false;
         private static bool testBoth = false;
         private static int M = 5;
         private static bool log = false;
-        private static readonly int testCount = 1;
+        private static readonly int testCount = 10;
+
 
         private static Tuple<double, double> id3 = new Tuple<double,double>(0,0);
         private static Tuple<double, double> naive = new Tuple<double, double>(0, 0);
@@ -28,6 +34,191 @@ namespace boosting
 
         static void Main(string[] args)
         {
+            //bool cont = false;
+            //while (!cont)
+            //{
+            //    String input = Console.ReadLine();
+            //    // [file,   id3/NB/both,    M,      log]
+            //    // [0-4,    0-2,            0-..,   0-1]
+
+            //    Console.WriteLine("input: " + input);
+
+            //    cont = initRun(input, true);
+            //}
+            
+            //run();
+
+            makeDatasetTables();
+            Console.WriteLine(data);
+
+            System.IO.StreamWriter file2 = new System.IO.StreamWriter(@"..\..\..\datasets\data.txt");
+            file2.WriteLine(data);
+
+            Console.WriteLine("DONE");
+            Console.ReadLine();
+        }
+
+        static private bool initRun(string input, bool reader)
+        {
+            String[] vals = input.Split(',');
+
+            if (inputOK(vals))
+            {
+                fileName = filenames[int.Parse(vals[0])];
+                switch (int.Parse(vals[1]))
+                {
+                    case 0:
+                        if (reader)
+                        {
+                            Console.WriteLine("Tree depth: ");
+                            string temp = Console.ReadLine();
+                            int num;
+                            if (int.TryParse(temp, out num))
+                            {
+                                ID3.maxDepth = num;
+                            }
+                            else return false;
+                        }
+                        testID3 = true;
+                        testNB = false;
+                        testBoth = false;
+                        break;
+                    case 1:
+                        testID3 = false;
+                        testNB = true;
+                        testBoth = false;
+                        break;
+                    case 2:
+                        testID3 = false;
+                        testNB = false;
+                        testBoth = true;
+                        break;
+                    default:
+                        break;
+                }
+
+
+                M = int.Parse(vals[2]);
+
+                switch (int.Parse(vals[3]))
+                {
+                    case 0:
+                        log = false;
+                        break;
+                    case 1:
+                        log = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                return true;
+            }
+            return false;
+        }
+
+        static private List<Tuple<double, double>> data = new List<Tuple<double, double>>();
+
+
+        static private void makeDatasetTables()
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    initRun(i + "," + j + ",1,0", false);
+                    int a = -1;
+                    if (j == 0)
+                    {
+                        Tuple<List<Case>, List<Case>, double> temp = getCaseSetsFromFile();
+                        int t1 = temp.Item1.GroupBy(c => c.classification).Count();
+                        int t2 = temp.Item2.GroupBy(c => c.classification).Count();
+                        a = (int)Math.Max(t1, t2);
+                    }
+                    ID3.maxDepth = a;
+                    run();
+
+                    initRun(i + "," + j + ",5,0", false);
+                    ID3.maxDepth = -1;
+                    run();
+
+
+                    initRun(i + "," + j + ",10,0", false);
+                    ID3.maxDepth = 1;
+                    run();
+
+                    if (j == 0)
+                    {
+                        initRun(i + "," + j + ",10,0", false);
+                        ID3.maxDepth = 2;
+                        run();
+
+                        initRun(i + "," + j + ",10,0", false);
+                        ID3.maxDepth = a;
+                        run();
+                    }
+
+                    initRun(i + "," + j + ",20,0", false);
+                    ID3.maxDepth = a;
+                    run();
+                }
+            }
+        }
+
+        //A single DTC (max depth = A)
+        //5 DTCs (max possible depth)
+        //10 DTCs (max depth = 1)
+        //10 DTCs (max depth = 2)
+        //10 DTCs (max depth = A)
+        //20 DTCs (max depth = A)
+
+        //A single NBC.
+        //5 NBCs
+        //10 NBCs
+        //20 NBCs
+
+        //5 NBCs and 5 DTCs (max depth = 2)
+        //10 NBCs and 10 DTCs (max depth = 2)
+        //20 NBCs and 20 DTCs (max depth = 2)
+
+
+        static private bool inputOK(string[] vals)
+        {
+            bool temp = true;
+            int num;
+            if (vals.Length != 4)
+                return false;
+            for (int i = 0; i < 4; i++)
+            {
+                if (!int.TryParse(vals[i], out num))
+                    return false;
+                switch (i)
+                {
+                    case 0:
+                        if (num < 0 || num > 4) 
+                            return false;
+                        break;
+                    case 1:
+                        if (num < 0 || num > 2)
+                            return false;
+                        break;
+                    case 2:
+                        if (false)
+                            return false;
+                        break;
+                    case 3:
+                        if (num < 0 || num > 1)
+                            return false;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return temp;
+        }
+
+        static void run()
+        {
             for (int i = 0; i < testCount; i++)
             {
                 trainAndTest();
@@ -36,11 +227,13 @@ namespace boosting
             }
             if (testID3)
             {
-                ID3.maxDepth = 5;
                 id3 = new Tuple<double, double>(id3.Item1 / testCount, id3.Item2 / testCount);
                 id3M = new Tuple<double, double>(id3M.Item1 / testCount, id3M.Item2 / testCount);
                 Console.WriteLine("Average ID3: " + id3);
                 Console.WriteLine("Average " + M + " ID3: " + id3M);
+
+                data.Add(id3);
+                data.Add(id3M);
             }
             if (testNB)
             {
@@ -48,15 +241,17 @@ namespace boosting
                 naiveM = new Tuple<double, double>(naiveM.Item1 / testCount, naiveM.Item2 / testCount);
                 Console.WriteLine("Average NB: " + naive);
                 Console.WriteLine("Average " + M + " NB: " + naiveM);
+
+                data.Add(naive);
+                data.Add(naiveM);
             }
             if (testBoth)
             {
                 both = new Tuple<double, double>(both.Item1 / testCount, both.Item2 / testCount);
                 Console.WriteLine("Average " + M + "Both: " + both);
-            }
 
-            Console.WriteLine("DONE");
-            Console.ReadLine();
+                data.Add(both);
+            }
         }
 
         static Tuple<List<Case>, List<Case>, double> getCaseSetsFromFile()
@@ -88,15 +283,18 @@ namespace boosting
 
         static void trainAndTest()
         {
-            Console.WriteLine(fileName);
+            if (log)
+            {
+                Console.WriteLine(fileName);
+            }
             Tuple<List<Case>, List<Case>, double> caseSets = getCaseSetsFromFile();
 
-            List<Hypotheses> lonleyL = new List<Hypotheses>()
-                {
-                    KNearest.generateHypothesis(caseSets.Item1)
-                };
-            Tuple<double, double> resh = ADABoost.test(lonleyL, caseSets.Item2, log);
-            Console.WriteLine("KNearest: " + resh);
+            //List<Hypotheses> lonleyL = new List<Hypotheses>()
+            //    {
+            //        KNearest.generateHypothesis(caseSets.Item1)
+            //    };
+            //Tuple<double, double> resh = ADABoost.test(lonleyL, caseSets.Item2, log);
+            //Console.WriteLine("KNearest: " + resh);
 
             if (testID3)
             {
@@ -111,8 +309,8 @@ namespace boosting
             if (testBoth)
             {
                 List<Hypotheses> H = new List<Hypotheses>();
-                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, M / 2, caseSets.Item3, log));
-                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M / 2, caseSets.Item3, log));
+                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, M, caseSets.Item3, log));
+                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M, caseSets.Item3, log));
                 double totalWeight = H.Sum(h => h.weight);
                 foreach (Hypotheses h in H) h.weight /= totalWeight;
                 Tuple<double, double> res = ADABoost.test(H, caseSets.Item2, log);
@@ -130,7 +328,10 @@ namespace boosting
             Tuple<double, double> res = ADABoost.test(lonleyL, caseSets.Item2, log);
             if(name == "ID3") id3 = new Tuple<double, double>(id3.Item1 + res.Item1, id3.Item2 + res.Item2);
             else naive = new Tuple<double, double>(naive.Item1 + res.Item1, naive.Item2 + res.Item2);
-            Console.WriteLine(name + ": " + res);
+            if (log)
+            {
+                Console.WriteLine(name + ": " + res);
+            }
 
             List<Hypotheses> H = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, caseSets.Item3, log);
             double totalWeightNB = H.Sum(h => h.weight);
@@ -142,8 +343,11 @@ namespace boosting
 
             Tuple<double, double> resM = ADABoost.test(H, caseSets.Item2, log);
             if (name == "ID3") id3M = new Tuple<double, double>(id3M.Item1 + resM.Item1, id3M.Item2 + resM.Item2);
-            else naive = new Tuple<double, double>(naiveM.Item1 + resM.Item1, naiveM.Item2 + resM.Item2);
-            Console.WriteLine(M + " " + name + "': " + resM);
+            else naiveM = new Tuple<double, double>(naiveM.Item1 + resM.Item1, naiveM.Item2 + resM.Item2);
+            if (log)
+            {
+                Console.WriteLine(M + " " + name + "': " + resM);
+            }
         }
     }
 

@@ -172,8 +172,8 @@ namespace boosting
 
             public void coverDomain()
             {
-                branches.First().min = Math.Min(branches.First().min, -100000);
-                branches.Last().max = Math.Max(branches.Last().max, +100000);
+                branches.First().min = Math.Min(branches.First().min, double.MinValue);
+                branches.Last().max = Math.Max(branches.Last().max, double.MaxValue);
 
                 for (int i = 1; i < branches.Count; i++)
                 {
