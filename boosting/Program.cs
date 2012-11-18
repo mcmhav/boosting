@@ -16,17 +16,42 @@ namespace boosting
         private static bool testID3 = true;
         private static bool testNB = false;
         private static bool testBoth = false;
-
         private static int M = 5;
         private static bool log = false;
+        private static readonly int testCount = 10;
+
+        private static Tuple<double, double> id3 = new Tuple<double,double>(0,0);
+        private static Tuple<double, double> naive = new Tuple<double, double>(0, 0);
+        private static Tuple<double, double> id3M = new Tuple<double, double>(0, 0);
+        private static Tuple<double, double> naiveM = new Tuple<double, double>(0, 0);
+        private static Tuple<double, double> both = new Tuple<double, double>(0, 0);
 
         static void Main(string[] args)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < testCount; i++)
             {
                 trainAndTest();
                 Console.WriteLine();
                 Console.WriteLine();
+            }
+            if (testID3)
+            {
+                id3 = new Tuple<double, double>(id3.Item1 / testCount, id3.Item2 / testCount);
+                id3M = new Tuple<double, double>(id3M.Item1 / testCount, id3M.Item2 / testCount);
+                Console.WriteLine("Average ID3: " + id3);
+                Console.WriteLine("Average " + M + " ID3: " + id3M);
+            }
+            if (testNB)
+            {
+                naive = new Tuple<double, double>(naive.Item1 / testCount, naive.Item2 / testCount);
+                naiveM = new Tuple<double, double>(naiveM.Item1 / testCount, naiveM.Item2 / testCount);
+                Console.WriteLine("Average NB: " + naive);
+                Console.WriteLine("Average " + M + " NB: " + naiveM);
+            }
+            if (testBoth)
+            {
+                both = new Tuple<double, double>(both.Item1 / testCount, both.Item2 / testCount);
+                Console.WriteLine("Average " + M + "Both: " + both);
             }
 
             Console.WriteLine("DONE");
@@ -82,8 +107,9 @@ namespace boosting
                 H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M / 2, caseSets.Item3, log));
                 double totalWeight = H.Sum(h => h.weight);
                 foreach (Hypotheses h in H) h.weight /= totalWeight;
-                Console.WriteLine(totalWeight);
-                Console.WriteLine("Combined: " + ADABoost.test(H, caseSets.Item2, log));
+                Tuple<double, double> res = ADABoost.test(H, caseSets.Item2, log);
+                both = new Tuple<double, double>(both.Item1 + res.Item1, both.Item2 + res.Item2);
+                Console.WriteLine("Combined: " + res);
             }
         }
 
@@ -93,7 +119,10 @@ namespace boosting
                 {
                     L(caseSets.Item1)
                 };
-            Console.WriteLine(name + ": " + ADABoost.test(lonleyL, caseSets.Item2, log));
+            Tuple<double, double> res = ADABoost.test(lonleyL, caseSets.Item2, log);
+            if(name == "ID3") id3 = new Tuple<double, double>(id3.Item1 + res.Item1, id3.Item2 + res.Item2);
+            else naive = new Tuple<double, double>(naive.Item1 + res.Item1, naive.Item2 + res.Item2);
+            Console.WriteLine(name + ": " + res);
 
             List<Hypotheses> H = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, caseSets.Item3, log);
             double totalWeightNB = H.Sum(h => h.weight);
@@ -102,7 +131,11 @@ namespace boosting
                 h.weight /= totalWeightNB;
                 if (log) Console.WriteLine("weight: " + h.weight);
             }
-            Console.WriteLine("M " + name + "': " + ADABoost.test(H, caseSets.Item2, log));
+
+            Tuple<double, double> resM = ADABoost.test(H, caseSets.Item2, log);
+            if (name == "ID3") id3M = new Tuple<double, double>(id3M.Item1 + resM.Item1, id3M.Item2 + resM.Item2);
+            else naive = new Tuple<double, double>(naiveM.Item1 + resM.Item1, naiveM.Item2 + resM.Item2);
+            Console.WriteLine(M + " " + name + "': " + resM);
         }
     }
 

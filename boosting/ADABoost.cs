@@ -48,7 +48,7 @@ namespace boosting
                     Console.WriteLine("HError: " + hError);
                     Console.WriteLine("Weight: " + examples.Sum(c => c.weight));
                 }
-                h[m].weight = Math.Log((1 - hError) / hError);
+                h[m].weight = Math.Log((1 - error) / error);
                 weightTotal += h[m].weight;
             }
 
@@ -58,15 +58,23 @@ namespace boosting
             return h;
         }
 
-        public static double test(List<Hypotheses> hypotheses, List<Case> testSet, bool log)
+        public static Tuple<double, double> test(List<Hypotheses> hypotheses, List<Case> testSet, bool log)
         {
-            double mse = 0;
+            double seTotal = 0;
+            double wrongCount = 0;
             foreach (Case c in testSet)
             {
-                //if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
-                mse += Math.Pow((classify(hypotheses, c.attributes) - c.classification), 2);
+                if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
+                double differance = classify(hypotheses, c.attributes) - c.classification;
+                if (differance != 0)
+                {
+                    seTotal += Math.Pow(differance, 2);
+                    wrongCount++;
+                }
             }
-            return mse / testSet.Count;
+            double rightPercentage = 1 - wrongCount / testSet.Count;
+            double mse = seTotal / testSet.Count;
+            return new Tuple<double, double>(mse, rightPercentage);
         }
 
         private static double classify(List<Hypotheses> H, List<double> attributes)
