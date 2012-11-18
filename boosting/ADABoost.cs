@@ -31,15 +31,17 @@ namespace boosting
                 }
                 error *= binaryRatio;
                 hError *= binaryRatio;
-                if (hError > 0.5)
-                {
-                    h.RemoveAt(h.Count - 1);
-                    continue;
-                }
 
                 for (int j = 0; j < N; j++)
                     if (h[m].classify(examples[j].attributes) == examples[j].classification)
                         examples[j].weight *= error / (1 - error);
+
+                if (hError > 0.5)
+                {
+                    h.RemoveAt(h.Count - 1);
+                    m--;
+                    continue;
+                }
 
                 double wTotal = examples.Sum(c => c.weight);
                 for (int j = 0; j < N; j++)
@@ -49,9 +51,9 @@ namespace boosting
 
                 if (log)
                 {
-                    Console.WriteLine("Error: " + error);
-                    Console.WriteLine("HError: " + hError);
-                    Console.WriteLine("Weight: " + examples.Sum(c => c.weight));
+                    //Console.WriteLine("Error: " + error);
+                    //Console.WriteLine("HError: " + hError);
+                    //Console.WriteLine("Weight: " + examples.Sum(c => c.weight));
                 }
                 h[m].weight = Math.Log((1 - error) / error);
                 weightTotal += h[m].weight;
@@ -69,7 +71,7 @@ namespace boosting
             double wrongCount = 0;
             foreach (Case c in testSet)
             {
-                if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
+                //if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
                 double differance = classify(hypotheses, c.attributes) - c.classification;
                 if (differance != 0)
                 {
@@ -79,6 +81,8 @@ namespace boosting
             }
             double rightPercentage = 1 - wrongCount / testSet.Count;
             double mse = seTotal / testSet.Count;
+            if (rightPercentage > 1)
+                Console.WriteLine();
             return new Tuple<double, double>(mse, rightPercentage);
         }
 

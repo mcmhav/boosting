@@ -12,17 +12,17 @@ namespace boosting
     class Program
     {
         //private static string fileName = ;     // 0 - 4
-        private static string fileName = "pen-digits.txt";  // 0 - 9
+        private static string fileName = "glass.txt";  // 0 - 9
         private static List<string> filenames = new List<string>(){"Yeast.txt",
                                                                     "page-blocks.txt",
                                                                     "glass.txt",
                                                                     "nursery.txt",
                                                                     "pen-digits.txt"};
-        private static bool testID3 = false;
-        private static bool testNB = false;
-        private static bool testBoth = false;
-        private static int M = 5;
-        private static bool log = false;
+        private static bool testID3 = true;
+        private static bool testNB = true;
+        private static bool testBoth = true;
+        private static int M = 20;
+        private static bool log = true;
         private static readonly int testCount = 10;
 
 
@@ -45,10 +45,10 @@ namespace boosting
 
             //    cont = initRun(input, true);
             //}
-            
-            //run();
 
-            makeDatasetTables();
+            run();
+
+            //makeDatasetTables();
             Console.WriteLine(data);
 
             System.IO.StreamWriter file2 = new System.IO.StreamWriter(@"..\..\..\datasets\data.txt");
@@ -276,8 +276,8 @@ namespace boosting
             List<Case> testSet = new List<Case>();
             testSet.AddRange(cases.Skip((int)(cases.Count * 0.8)));
 
-            double binaryRatio = 0.5 / (1 - (double)(1 / cases.GroupBy(c => c.classification).Count()));
-
+            double binaryRatio = 0.5 / (1 - (double)1 / cases.GroupBy(c => c.classification).Count());
+            Console.WriteLine(cases.GroupBy(c => c.classification).Count());
             return new Tuple<List<Case>, List<Case>, double>(trainingSet, testSet, binaryRatio);
         }
 
@@ -288,13 +288,6 @@ namespace boosting
                 Console.WriteLine(fileName);
             }
             Tuple<List<Case>, List<Case>, double> caseSets = getCaseSetsFromFile();
-
-            //List<Hypotheses> lonleyL = new List<Hypotheses>()
-            //    {
-            //        KNearest.generateHypothesis(caseSets.Item1)
-            //    };
-            //Tuple<double, double> resh = ADABoost.test(lonleyL, caseSets.Item2, log);
-            //Console.WriteLine("KNearest: " + resh);
 
             if (testID3)
             {
@@ -321,6 +314,7 @@ namespace boosting
 
         static void trainNtest(Func<List<Case>, Hypotheses> L, Tuple<List<Case>, List<Case>, double> caseSets, string name)
         {
+            for (int i = 0; i < caseSets.Item1.Count; i++) caseSets.Item1[i].weight = ((double)1 / caseSets.Item1.Count);
             List<Hypotheses> lonleyL = new List<Hypotheses>()
                 {
                     L(caseSets.Item1)
@@ -338,7 +332,7 @@ namespace boosting
             foreach (Hypotheses h in H)
             {
                 h.weight /= totalWeightNB;
-                if (log) Console.WriteLine("weight: " + h.weight);
+                //if (log) Console.WriteLine("weight: " + h.weight);
             }
 
             Tuple<double, double> resM = ADABoost.test(H, caseSets.Item2, log);
