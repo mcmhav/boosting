@@ -31,6 +31,11 @@ namespace boosting
                 }
                 error *= binaryRatio;
                 hError *= binaryRatio;
+                if (hError > 0.5)
+                {
+                    h.RemoveAt(h.Count - 1);
+                    continue;
+                }
 
                 for (int j = 0; j < N; j++)
                     if (h[m].classify(examples[j].attributes) == examples[j].classification)

@@ -8,12 +8,10 @@ namespace boosting
 {
     class ID3 : Hypotheses
     {
-        private static readonly int numOfGroupings = 4;
-        private static readonly int minCasesPerRegNode = 50;
-        private static readonly double minInfoGain = 0.0;
-        private static readonly bool averageVote = false;
-
         public static int maxDepth = -1;
+        public static int numOfGroupings = 4;
+        public static int minCasesPerRegNode = 50;
+        public static double minInfoGain = 0;
 
         public static Hypotheses generateHypothesis(List<Case> cases)
         {
@@ -46,8 +44,7 @@ namespace boosting
                 return new LeafNode(cases[0].classification);
             else if (attributeIndexes.Count == 0 || (maxDepth != -1 && depth == maxDepth) || cases.Count < minCasesPerRegNode)
             {
-                if (averageVote) return new LeafNode(cases.Average(c => c.classification));
-                else return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
+                return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
             }
             double bestInfoGain = 0;
             int bestIndex = 0;
@@ -84,8 +81,7 @@ namespace boosting
             }
             else
             {
-                if (averageVote) return new LeafNode(cases.Average(c => c.classification));
-                else return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
+                return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
             }
         }
 

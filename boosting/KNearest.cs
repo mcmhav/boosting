@@ -112,13 +112,15 @@ namespace boosting
 
         public Tuple<double, List<double>> trainDistanceunit(int index, List<double> tempDistanceUnits)
         {
-            List<double> dValues = new List<double>() { 0.1, 0.2, 0.5, 1, 2, 4, 8 };
+            List<double> dValues = new List<double>() { 1, 2 };
             double bestD = 1;
             double bestMSE = 1000;
             double currentMSE;
             for (int i = 0; i < dValues.Count; i++)
             {
-                if (index == 0) Console.WriteLine(i + " of "  + (dValues.Count -1));
+                String output = "";
+                for (int j = 0; j < index + 1; j++) output += "\t";
+                Console.WriteLine(output + i + " of " + (dValues.Count - 1));
                 tempDistanceUnits[index] = distanceunits[index] * dValues[i];
                 if (index == trainingSet.First().attributes.Count - 1)
                 {
