@@ -36,6 +36,7 @@ namespace boosting
             }
             if (testID3)
             {
+                ID3.maxDepth = 5;
                 id3 = new Tuple<double, double>(id3.Item1 / testCount, id3.Item2 / testCount);
                 id3M = new Tuple<double, double>(id3M.Item1 / testCount, id3M.Item2 / testCount);
                 Console.WriteLine("Average ID3: " + id3);

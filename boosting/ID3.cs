@@ -12,13 +12,15 @@ namespace boosting
         private static readonly int minCasesPerRegNode = 50;
         private static readonly double minInfoGain = 0.0;
         private static readonly bool averageVote = false;
-        
+
+        public static int maxDepth = -1;
+
         public static Hypotheses generateHypothesis(List<Case> cases)
         {
             ID3 h = new ID3(cases);
             List<int> attributeIndexes = new List<int>();
             for (int i = 0; i < cases.First().attributes.Count; i++) attributeIndexes.Add(i);
-            h.rootNode = h.createNode(attributeIndexes, cases);
+            h.rootNode = h.createNode(attributeIndexes, cases, 0);
 
             return h;
         }
@@ -36,13 +38,13 @@ namespace boosting
             return rootNode.classify(attributes);
         }
         
-        private Node createNode(List<int> attributeIndexes, List<Case> cases)
+        private Node createNode(List<int> attributeIndexes, List<Case> cases, int depth)
         {
             double entropy = DataStatistics.entropy(cases, numOfClassifications);
             //Console.WriteLine("entropy: " + entropy);
             if (entropy == 0) 
                 return new LeafNode(cases[0].classification);
-            else if (attributeIndexes.Count == 0 || cases.Count < minCasesPerRegNode)
+            else if (attributeIndexes.Count == 0 || (maxDepth != -1 && depth == maxDepth) || cases.Count < minCasesPerRegNode)
             {
                 if (averageVote) return new LeafNode(cases.Average(c => c.classification));
                 else return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
@@ -74,7 +76,7 @@ namespace boosting
                     List<Case> remainingCases = cases.Where(c => c.attributes[bestIndex] >= bestNode.branches[i].min && c.attributes[bestIndex] < bestNode.branches[i].max).ToList();
                     //Console.WriteLine(remainingCases.Count);
                     if (remainingCases.Count == 0) branchesToRemove.Insert(0, i);
-                    else bestNode.branches[i].setChildNode(createNode(remainingAttributeIndexes, remainingCases));
+                    else bestNode.branches[i].setChildNode(createNode(remainingAttributeIndexes, remainingCases, depth + 1));
                 }
                 foreach (int i in branchesToRemove) bestNode.branches.RemoveAt(i);
                 bestNode.coverDomain();
