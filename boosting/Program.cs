@@ -12,18 +12,18 @@ namespace boosting
     class Program
     {
         //private static string fileName = ;     // 0 - 4
-        private static string fileName = "glass.txt";  // 0 - 9
+        private static string fileName = "pen-digits.txt";  // 0 - 9
         private static List<string> filenames = new List<string>(){"Yeast.txt",
                                                                     "page-blocks.txt",
                                                                     "glass.txt",
                                                                     "nursery.txt",
                                                                     "pen-digits.txt"};
-        private static bool testID3 = true;
+        private static bool testID3 = false;
         private static bool testNB = true;
-        private static bool testBoth = true;
-        private static int M = 20;
+        private static bool testBoth = false;
+        private static int M = 10;
         private static bool log = true;
-        private static readonly int testCount = 10;
+        private static readonly int testCount = 2;
 
 
         private static Tuple<double, double> id3 = new Tuple<double,double>(0,0);
@@ -45,6 +45,8 @@ namespace boosting
 
             //    cont = initRun(input, true);
             //}
+
+            fileName = filenames[3];
 
             run();
 
@@ -222,8 +224,11 @@ namespace boosting
             for (int i = 0; i < testCount; i++)
             {
                 trainAndTest();
-                Console.WriteLine();
-                Console.WriteLine();
+                if (log)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine();
+                }
             }
             if (testID3)
             {
@@ -277,7 +282,7 @@ namespace boosting
             testSet.AddRange(cases.Skip((int)(cases.Count * 0.8)));
 
             double binaryRatio = 0.5 / (1 - (double)1 / cases.GroupBy(c => c.classification).Count());
-            Console.WriteLine(cases.GroupBy(c => c.classification).Count());
+
             return new Tuple<List<Case>, List<Case>, double>(trainingSet, testSet, binaryRatio);
         }
 
