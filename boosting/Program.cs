@@ -12,12 +12,12 @@ namespace boosting
 {
     class Program
     {
-        private static string fileName = "nursery.txt";
+        private static string fileName = "pen-digits.txt";
         private static bool testID3 = true;
         private static bool testNB = false;
         private static bool testBoth = false;
 
-        private static int M = 10;
+        private static int M = 5;
         private static bool log = false;
 
         static void Main(string[] args)
@@ -32,7 +32,7 @@ namespace boosting
             Console.ReadLine();
         }
 
-        static Tuple<List<Case>, List<Case>> getCaseSetsFromFile()
+        static Tuple<List<Case>, List<Case>, double> getCaseSetsFromFile()
         {
             var reader = new StreamReader(File.OpenRead(@"..\..\..\datasets\" + fileName));
             List<string> valueNames = reader.ReadLine().Split(',').ToList();
@@ -54,13 +54,15 @@ namespace boosting
             List<Case> testSet = new List<Case>();
             testSet.AddRange(cases.Skip((int)(cases.Count * 0.8)));
 
-            return new Tuple<List<Case>, List<Case>>(trainingSet, testSet);
+            double binaryRatio = 0.5 / (1 - (double)(1 / cases.GroupBy(c => c.classification).Count()));
+
+            return new Tuple<List<Case>, List<Case>, double>(trainingSet, testSet, binaryRatio);
         }
 
         static void trainAndTest()
         {
             Console.WriteLine(fileName);
-            Tuple<List<Case>, List<Case>> caseSets = getCaseSetsFromFile();
+            Tuple<List<Case>, List<Case>, double> caseSets = getCaseSetsFromFile();
 
             if (testID3)
             {
@@ -75,8 +77,8 @@ namespace boosting
             if (testBoth)
             {
                 List<Hypotheses> H = new List<Hypotheses>();
-                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, M/2, log));
-                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M/2, log));
+                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, ID3.generateHypothesis, M / 2, caseSets.Item3, log));
+                H.AddRange(ADABoost.weightedMajorityHypotheses(caseSets.Item1, NaiveBayes.generateHypothesis, M / 2, caseSets.Item3, log));
                 double totalWeight = H.Sum(h => h.weight);
                 foreach (Hypotheses h in H) h.weight /= totalWeight;
                 Console.WriteLine(totalWeight);
@@ -84,7 +86,7 @@ namespace boosting
             }
         }
 
-        static void trainNtest(Func<List<Case>, Hypotheses> L, Tuple<List<Case>, List<Case>> caseSets, string name)
+        static void trainNtest(Func<List<Case>, Hypotheses> L, Tuple<List<Case>, List<Case>, double> caseSets, string name)
         {
             List<Hypotheses> lonleyL = new List<Hypotheses>()
                 {
@@ -92,7 +94,7 @@ namespace boosting
                 };
             Console.WriteLine(name + ": " + ADABoost.test(lonleyL, caseSets.Item2, log));
 
-            List<Hypotheses> H = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, log);
+            List<Hypotheses> H = ADABoost.weightedMajorityHypotheses(caseSets.Item1, L, M, caseSets.Item3, log);
             double totalWeightNB = H.Sum(h => h.weight);
             foreach (Hypotheses h in H)
             {

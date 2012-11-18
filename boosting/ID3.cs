@@ -8,22 +8,28 @@ namespace boosting
 {
     class ID3 : Hypotheses
     {
-        private static readonly int numOfGroupings = 10;
+        private static readonly int numOfGroupings = 4;
         private static readonly int minCasesPerRegNode = 50;
-        private static readonly double minInfoGain = 0.05;
+        private static readonly double minInfoGain = 0.0;
         private static readonly bool averageVote = false;
         
         public static Hypotheses generateHypothesis(List<Case> cases)
         {
-            ID3 h = new ID3();
-            List<int> remainingAttributeIndexes2 = new List<int>();
-            for (int i = 0; i < cases.First().attributes.Count; i++) remainingAttributeIndexes2.Add(i);
-            h.rootNode = h.createNode(remainingAttributeIndexes2, cases);
+            ID3 h = new ID3(cases);
+            List<int> attributeIndexes = new List<int>();
+            for (int i = 0; i < cases.First().attributes.Count; i++) attributeIndexes.Add(i);
+            h.rootNode = h.createNode(attributeIndexes, cases);
 
             return h;
         }
 
         private Node rootNode;
+        private int numOfClassifications;
+
+        public ID3(List<Case> cases)
+        {
+            this.numOfClassifications = cases.GroupBy(c => c.classification).Count();
+        }
 
         public override double classify(List<double> attributes)
         {
@@ -32,7 +38,8 @@ namespace boosting
         
         private Node createNode(List<int> attributeIndexes, List<Case> cases)
         {
-            double entropy = DataStatistics.entropy(cases);
+            double entropy = DataStatistics.entropy(cases, numOfClassifications);
+            //Console.WriteLine("entropy: " + entropy);
             if (entropy == 0) 
                 return new LeafNode(cases[0].classification);
             else if (attributeIndexes.Count == 0 || cases.Count < minCasesPerRegNode)
@@ -47,7 +54,7 @@ namespace boosting
             {
                 foreach (int attributeIndex in attributeIndexes)
                 {
-                    RegNode node = new RegNode(attributeIndex, cases, numOfGroupings);
+                    RegNode node = new RegNode(attributeIndex, cases, numOfGroupings, numOfClassifications);
                     double nodeInfoGain = entropy - node.entropy;
                     if (nodeInfoGain > bestInfoGain)
                     {
@@ -65,6 +72,7 @@ namespace boosting
                 {
                     List<int> remainingAttributeIndexes = attributeIndexes.Where(index => index != bestIndex).ToList();
                     List<Case> remainingCases = cases.Where(c => c.attributes[bestIndex] >= bestNode.branches[i].min && c.attributes[bestIndex] < bestNode.branches[i].max).ToList();
+                    //Console.WriteLine(remainingCases.Count);
                     if (remainingCases.Count == 0) branchesToRemove.Insert(0, i);
                     else bestNode.branches[i].setChildNode(createNode(remainingAttributeIndexes, remainingCases));
                 }
@@ -122,26 +130,35 @@ namespace boosting
             public List<Branch> branches { get; private set; }
             public double entropy { get; private set; }
 
-            public RegNode(int attributeIndex, List<Case> cases, int numOfGroupings)
+            public RegNode(int attributeIndex, List<Case> cases, int numOfGroupings, int numOfClassifications)
             {
                 this.attributeIndex = attributeIndex;
                 branches = new List<Branch>();
                 entropy = 0;
-                var casesOrderedBytAttribute = cases.OrderBy(c => c.attributes[attributeIndex]).ToList();
-                int groupSize = Math.Max(casesOrderedBytAttribute.Count / numOfGroupings, 1);
-                double lastMax = -10000;
-                for (int i = 0; i < numOfGroupings && i < casesOrderedBytAttribute.Count; i++)
+                var originalGroupings = cases.GroupBy(c => c.attributes[attributeIndex]).OrderBy(g => g.Key);
+                if (originalGroupings.Count() <= numOfGroupings)
                 {
-                    Branch branch = new Branch(
-                        lastMax,
-                        lastMax = casesOrderedBytAttribute[i * groupSize + groupSize - 1].attributes[attributeIndex]);
-                    branches.Add(branch);
-
-                    List<Case> branchCases = casesOrderedBytAttribute
-                        .Where(c => c.attributes[attributeIndex] > branch.min && c.attributes[attributeIndex] < branch.max)
-                        .ToList();
-                    entropy += (double)branchCases.Count / cases.Count * DataStatistics.entropy(branchCases);
+                    foreach (var group in originalGroupings)
+                    {
+                        Branch branch = new Branch(group.Key, group.Key);
+                        branches.Add(branch);
+                        entropy += (double)group.Count() / cases.Count * DataStatistics.entropy(group.ToList(), numOfClassifications);
+                    }
                 }
+                else
+                {
+                    var casesOrderedBytAttribute = cases.OrderBy(c => c.attributes[attributeIndex]).ToList();
+                    int groupSize = Math.Max(casesOrderedBytAttribute.Count / numOfGroupings, 1);
+                    for (int i = 0; i < numOfGroupings && i < casesOrderedBytAttribute.Count; i++)
+                    {
+                        List<Case> branchCases = casesOrderedBytAttribute.Skip(i*groupSize).Take(groupSize).ToList();
+                        Branch branch = new Branch(branchCases.First().attributes[attributeIndex], branchCases.Last().attributes[attributeIndex]);
+                        branches.Add(branch);
+                        entropy += ((double)branchCases.Count / cases.Count) * DataStatistics.entropy(branchCases, numOfClassifications);
+                        //Console.WriteLine("branchentropy: " + DataStatistics.entropy(branchCases) + " - " + branchCases.Count);
+                    }
+                }
+                //Console.WriteLine("entropy: " + entropy + " - caseCount: " + cases.Count);
                 coverDomain();
             }
 
@@ -153,8 +170,15 @@ namespace boosting
 
             public void coverDomain()
             {
-                branches.First().setMinValue(Math.Min(branches.First().min, -100000));
-                branches.Last().setMaxValue(Math.Max(branches.Last().max, +100000));
+                branches.First().min = Math.Min(branches.First().min, -100000);
+                branches.Last().max = Math.Max(branches.Last().max, +100000);
+
+                for (int i = 1; i < branches.Count; i++)
+                {
+                    double crackSize = branches[i].min - branches[i - 1].max;
+                    branches[i - 1].max += crackSize / 2;
+                    branches[i].min = branches[i - 1].max;
+                }
             }
 
             public override string ToString()
@@ -170,8 +194,8 @@ namespace boosting
 
         internal class Branch
         {
-            public double min { get; private set; }
-            public double max { get; private set; }
+            public double min;
+            public double max;
             public Node child { get; private set; }
 
             public Branch(double minValue, double maxValue)

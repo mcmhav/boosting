@@ -148,7 +148,7 @@ namespace boosting
                     }
                 }
 
-                fillCracks();
+                coverDomain();
             }
 
             public AttrGroupings(List<Case> cases, AttrGroupings original)
@@ -168,10 +168,10 @@ namespace boosting
                     this.groupings.Add(new ValueGrouping(g, probability));
                 }
 
-                fillCracks();
+                coverDomain();
             }
 
-            private void fillCracks()
+            private void coverDomain()
             {
                 groupings.First().min = -999999;
                 groupings.Last().max = 999999;

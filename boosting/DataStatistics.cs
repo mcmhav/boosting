@@ -18,18 +18,17 @@ namespace boosting
             return sd;
         }
 
-        public static double entropy(List<Case> cases)
+        public static double entropy(List<Case> cases, int numOfClassifications)
         {
-            int numOfclassificationValues = cases.GroupBy(c => c.classification).Count();
             double entropy = 0;
             double totalWeight = cases.Sum(c => c.weight);
             var groupings = cases.GroupBy(c => c.classification).ToList();
             foreach (var g in groupings)
             {
                 double proportion = (double) g.Sum(c => c.weight) / totalWeight;
-                entropy -= proportion * Math.Log(proportion, numOfclassificationValues);
+                //Console.WriteLine(proportion);
+                entropy -= proportion * Math.Log(proportion, numOfClassifications);
             }
-            //Console.WriteLine("Entropy: " + entropy);
             return entropy;
         }
     }

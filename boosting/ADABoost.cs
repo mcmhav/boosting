@@ -8,15 +8,13 @@ namespace boosting
 {
     class ADABoost
     {
-        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, Hypotheses> L, int M, bool log)
+        public static List<Hypotheses> weightedMajorityHypotheses(List<Case> examples, Func<List<Case>, Hypotheses> L, int M, double binaryRatio, bool log)
         {
             int N = examples.Count;
             List<Hypotheses> h = new List<Hypotheses>();
             double weightTotal = 0;
 
             for (int i = 0; i < N; i++) examples[i].weight = ((double)1/N);
-
-            double binaryRatio = 0.5 / (1 - (1 / examples.GroupBy(c => c.classification).Count()));
 
             for (int m = 0; m < M; m++)
             {
