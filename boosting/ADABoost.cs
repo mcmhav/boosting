@@ -36,12 +36,12 @@ namespace boosting
                     if (h[m].classify(examples[j].attributes) == examples[j].classification)
                         examples[j].weight *= error / (1 - error);
 
-                if (hError > 0.5)
-                {
-                    h.RemoveAt(h.Count - 1);
-                    m--;
-                    continue;
-                }
+                //if (hError > 0.5)
+                //{
+                //    h.RemoveAt(h.Count - 1);
+                //    m--;
+                //    continue;
+                //}
 
                 double wTotal = examples.Sum(c => c.weight);
                 for (int j = 0; j < N; j++)
@@ -65,25 +65,26 @@ namespace boosting
             return h;
         }
 
-        public static Tuple<double, double> test(List<Hypotheses> hypotheses, List<Case> testSet, bool log)
+        public static Tuple<double, double, double, double> test(List<Hypotheses> hypotheses, List<Case> testSet, bool log)
         {
             double seTotal = 0;
             double wrongCount = 0;
+            List<double> errors = new List<double>();
             foreach (Case c in testSet)
             {
-                //if(log) Console.WriteLine("our: " + classify(hypotheses, c.attributes) + "   real: " + c.classification);
                 double differance = classify(hypotheses, c.attributes) - c.classification;
+                errors.Add(differance);
                 if (differance != 0)
                 {
                     seTotal += Math.Pow(differance, 2);
                     wrongCount++;
                 }
             }
+            double avgError = errors.Average();
+            double sd = DataStatistics.standardDeviation(errors);
             double rightPercentage = 1 - wrongCount / testSet.Count;
             double mse = seTotal / testSet.Count;
-            if (rightPercentage > 1)
-                Console.WriteLine();
-            return new Tuple<double, double>(mse, rightPercentage);
+            return new Tuple<double, double, double, double>(mse, rightPercentage, avgError, sd);
         }
 
         private static double classify(List<Hypotheses> H, List<double> attributes)

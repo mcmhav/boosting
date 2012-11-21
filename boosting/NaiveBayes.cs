@@ -8,7 +8,7 @@ namespace boosting
 {
     class NaiveBayes : Hypotheses
     {
-        private static readonly int numOfGroupings = 15;
+        private static readonly int numOfGroupings = 10;
 
         private List<ClassGrouping> classProbabilities;
         private List<AttrGroupings> attrProbabilities;
@@ -27,7 +27,7 @@ namespace boosting
                 attrProbabilities.Add(new AttrGroupings(cases, i));
 
             var originalGroupings = cases.GroupBy(c => c.classification).ToList();
-            if (originalGroupings.Count <= 10)
+            if (originalGroupings.Count <= 25)
             {
                 for (int i = 0; i < originalGroupings.Count; i++)
                 {

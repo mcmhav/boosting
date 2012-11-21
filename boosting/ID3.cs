@@ -10,7 +10,7 @@ namespace boosting
     {
         public static int maxDepth = -1;
         public static int numOfGroupings = 4;
-        public static int minCasesPerRegNode = 50;
+        public static int minCasesPerGrouping = 10;
         public static double minInfoGain = 0;
 
         public static Hypotheses generateHypothesis(List<Case> cases)
@@ -42,7 +42,7 @@ namespace boosting
             //Console.WriteLine("entropy: " + entropy);
             if (entropy == 0) 
                 return new LeafNode(cases[0].classification);
-            else if (attributeIndexes.Count == 0 || (maxDepth != -1 && depth == maxDepth) || cases.Count < minCasesPerRegNode)
+            else if (attributeIndexes.Count == 0 || (maxDepth != -1 && depth == maxDepth) || cases.Count < (minCasesPerGrouping * numOfGroupings))
             {
                 return new LeafNode(cases.GroupBy(c => c.classification).OrderByDescending(g => g.Count()).First().Key);
             }
