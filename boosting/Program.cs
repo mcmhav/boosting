@@ -19,7 +19,7 @@ namespace boosting
                                                                     "nursery.txt",
                                                                     "pen-digits.txt"};
         private static bool log = false;
-        private static readonly int testCount = 10;
+        private static readonly int testCount = 5;
 
         private static Tuple<double, double, double, double> results = new Tuple<double, double, double, double>(0, 0, 0, 0);
         static private List<string> data = new List<string>();
@@ -200,7 +200,6 @@ namespace boosting
                     both += "\t" + results.Item1 + "\t" + results.Item2 + "\t" + results.Item3 + "\t" + results.Item4;
                     data.Add(both);
                 }
-
                 data.Add("");
             }
         }
