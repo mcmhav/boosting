@@ -72,7 +72,7 @@ namespace boosting
             List<double> errors = new List<double>();
             foreach (Case c in testSet)
             {
-                double differance = classify(hypotheses, c.attributes) - c.classification;
+                double differance = Math.Abs(classify(hypotheses, c.attributes) - c.classification);
                 errors.Add(differance);
                 if (differance != 0)
                 {
@@ -82,7 +82,7 @@ namespace boosting
             }
             double avgError = errors.Average();
             double sd = DataStatistics.standardDeviation(errors);
-            double rightPercentage = 1 - wrongCount / testSet.Count;
+            double rightPercentage = (1 - wrongCount / testSet.Count) * 100;
             double mse = seTotal / testSet.Count;
             return new Tuple<double, double, double, double>(mse, rightPercentage, avgError, sd);
         }
